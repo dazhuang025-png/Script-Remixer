@@ -7,6 +7,19 @@ import { extractStyleDNA, generateBlueprint, writeChapter, refineChapter } from 
 import { Sparkles, PenTool, BookOpen, Layers, PlayCircle, StopCircle, Save, Film, ArrowRight, Users, Plus, Trash2, Gauge, BrainCircuit, CheckCircle, ChevronRight, RefreshCcw, X, FileText, Lock, Key, Unlock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
+// Helper to safely get env vars in mixed environments (Vite/Node)
+const getEnvVar = (key: string): string | undefined => {
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+      return process.env[key];
+    }
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[`VITE_${key}`]) {
+      // @ts-ignore
+      return import.meta.env[`VITE_${key}`];
+    }
+    return undefined;
+};
+
 const App: React.FC = () => {
   // --- AUTH STATE ---
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -15,7 +28,7 @@ const App: React.FC = () => {
 
   // Check auth on mount
   useEffect(() => {
-    const appPassword = process.env.APP_PASSWORD;
+    const appPassword = getEnvVar('APP_PASSWORD');
     const storedAuth = localStorage.getItem('script_remixer_auth');
     
     // If no password is set in env, we assume open access
@@ -32,7 +45,7 @@ const App: React.FC = () => {
 
   const handleLogin = (e?: React.FormEvent) => {
     e?.preventDefault();
-    const appPassword = process.env.APP_PASSWORD;
+    const appPassword = getEnvVar('APP_PASSWORD');
     if (passwordInput === appPassword) {
       setIsAuthenticated(true);
       localStorage.setItem('script_remixer_auth', passwordInput);

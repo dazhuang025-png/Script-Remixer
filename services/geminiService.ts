@@ -2,11 +2,27 @@ import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { DirectorStyle, Chapter, Character } from '../types';
 import { DIRECTOR_SAMPLES } from '../constants';
 
-const getModel = () => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key is missing. Please check your environment configuration.");
+// Helper to safely get the API Key from various environment configurations
+const getApiKey = (): string | undefined => {
+  // 1. Try standard process.env (Node.js or Webpack/Vite define replacement)
+  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    return process.env.API_KEY;
   }
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // 2. Try Vite standard (import.meta.env) - vital for Vercel frontend deployment
+  // @ts-ignore - Ignore TS error if import.meta is not configured in strict mode
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+    // @ts-ignore
+    return import.meta.env.VITE_API_KEY;
+  }
+  return undefined;
+};
+
+const getModel = () => {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please check your environment configuration (VITE_API_KEY in Vercel).");
+  }
+  const ai = new GoogleGenAI({ apiKey });
   // Switched to gemini-2.5-flash for better availability and speed
   return ai.models;
 };
@@ -71,7 +87,7 @@ export const extractStyleDNA = async (
     return response.text || "无法提取风格。";
   } catch (error) {
     console.error("Style extraction failed:", error);
-    throw new Error("风格学习失败，请检查网络或API Key。");
+    throw new Error("风格学习失败，请检查网络或API Key配置。");
   }
 };
 
